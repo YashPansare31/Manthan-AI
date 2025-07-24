@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Brain, Settings, Activity, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +16,7 @@ interface HeaderProps {
 
 export const Header = ({ processingTime, isProcessing }: HeaderProps) => {
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkApiHealth = async () => {
@@ -39,11 +41,27 @@ export const Header = ({ processingTime, isProcessing }: HeaderProps) => {
     }
   };
 
+  const handleLogoClick = () => {
+    navigate('/');
+  };
+
   return (
     <header className="glass-strong border-b border-glass-border/30 sticky top-0 z-50">
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Logo and Brand */}
-        <div className="flex items-center space-x-3">
+        {/* Logo and Brand - Clickable */}
+        <div 
+          className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity duration-200"
+          onClick={handleLogoClick}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleLogoClick();
+            }
+          }}
+          aria-label="Go to home page"
+        >
           <div className="relative">
             <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
               <Brain className="w-6 h-6 text-white" />
@@ -54,7 +72,7 @@ export const Header = ({ processingTime, isProcessing }: HeaderProps) => {
           </div>
           <div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
-              MeetingMind AI
+              Manthan AI
             </h1>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground">
               <Activity className="w-3 h-3" />

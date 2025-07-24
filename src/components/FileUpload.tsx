@@ -180,7 +180,7 @@ export const FileUpload = ({ onFileAnalyzed, isProcessing, setIsProcessing }: Fi
             <span>MP3, MP4, WAV, M4A • Max 25MB</span>
           </div>
 
-          <div className="flex space-x-3">
+          <div className="flex justify-center items-center space-x-6">
             <Button 
               variant="outline" 
               className="glass-strong border-primary/30 hover:bg-primary/10"

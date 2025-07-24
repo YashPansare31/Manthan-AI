@@ -1,13 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { FileUpload } from '@/components/FileUpload';
-import { ResultsSection } from '@/components/ResultsSection';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { LogIn, Mail, Github, Chrome, Brain, Zap, Shield, Clock } from 'lucide-react';
 import heroBackground from '@/assets/hero-background.jpg';
-import { sampleAnalysisResults } from '@/utils/demoData';
 
 interface AnalysisResults {
   transcription: string;
@@ -17,64 +16,20 @@ interface AnalysisResults {
   processing_time: number;
 }
 
-const Index = () => {
-  const [results, setResults] = useState<AnalysisResults | null>(null);
+const HomePage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleFileAnalyzed = (analysisResults: AnalysisResults) => {
-    setResults(analysisResults);
+    // Navigate to results page with the analysis data
+    navigate('/results', { state: { results: analysisResults } });
   };
 
   const handleNewUpload = () => {
-    setResults(null);
-  };
-
-  const handleExport = () => {
-    if (!results) return;
-    
-    const exportData = {
-      transcription: results.transcription,
-      summary: results.summary,
-      action_items: results.action_items,
-      decision_points: results.decision_points,
-      exported_at: new Date().toISOString(),
-    };
-    
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
-      type: 'application/json' 
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `meeting-analysis-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Export successful",
-      description: "Meeting analysis exported as JSON",
-    });
-  };
-
-  const handleShare = () => {
-    if (!results) return;
-    
-    const shareText = `Meeting Analysis Summary:\n\n${results.summary}\n\nAction Items:\n${results.action_items.map(item => `• ${item}`).join('\n')}`;
-    
-    if (navigator.share) {
-      navigator.share({
-        title: 'Meeting Analysis',
-        text: shareText,
-      });
-    } else {
-      navigator.clipboard.writeText(shareText);
-      toast({
-        title: "Copied to clipboard",
-        description: "Meeting summary copied for sharing",
-      });
-    }
+    // Navigate back to home (file upload)
+    navigate('/');
   };
 
   const handleSignIn = () => {
@@ -87,7 +42,7 @@ const Index = () => {
 
   const handleSignOut = () => {
     setIsAuthenticated(false);
-    setResults(null);
+    navigate('/');
     toast({
       title: "Signed out",
       description: "You've been successfully signed out",
@@ -97,9 +52,7 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       <Header 
-        processingTime={results?.processing_time} 
         isProcessing={isProcessing}
-        onLogoClick={() => setResults(null)}
       />
       
       <main className="container mx-auto px-6 py-8">
@@ -110,7 +63,7 @@ const Index = () => {
             <div className="text-center mb-16 animate-fade-in">
               <div className="mb-8">
                 <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-white via-primary-glow to-primary bg-clip-text text-transparent">
-                  MeetingMind AI
+                  Manthan AI
                 </h1>
                 <p className="text-2xl text-muted-foreground mb-4 max-w-3xl mx-auto">
                   Transform your meetings into actionable insights with AI-powered transcription, 
@@ -200,7 +153,7 @@ const Index = () => {
               </div>
             </div>
           </div>
-        ) : !results ? (
+        ) : (
           /* File Upload Section (Authenticated) */
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 animate-fade-in">
@@ -234,34 +187,16 @@ const Index = () => {
                 setIsProcessing={setIsProcessing}
               />
             </div>
-          </div>
-        ) : (
-          /* Results Section */
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold mb-2">Analysis Complete</h2>
-                <p className="text-muted-foreground">
-                  Your meeting has been processed and analyzed
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleNewUpload}
-                  className="px-6 py-2 glass-strong rounded-lg border border-primary/30 hover:bg-primary/10 transition-all duration-300 text-sm"
-                >
-                  New Upload
-                </button>
-                <button
-                  onClick={handleSignOut}
-                  className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Sign Out
-                </button>
-              </div>
+
+            <div className="flex justify-center mt-8">
+              <Button
+                onClick={handleSignOut}
+                variant="outline"
+                className="px-6 py-2"
+              >
+                Sign Out
+              </Button>
             </div>
-            
-            <ResultsSection results={results} />
           </div>
         )}
       </main>
@@ -269,9 +204,7 @@ const Index = () => {
       {/* Floating Action Button */}
       <FloatingActionButton
         onNewUpload={handleNewUpload}
-        onExport={handleExport}
-        onShare={handleShare}
-        hasResults={!!results}
+        hasResults={false}
       />
 
       {/* Background decorative elements */}
@@ -284,4 +217,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default HomePage;
