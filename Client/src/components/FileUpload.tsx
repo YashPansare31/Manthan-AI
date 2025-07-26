@@ -67,7 +67,7 @@ export const FileUpload = ({ onFileAnalyzed, isProcessing, setIsProcessing }: Fi
         await new Promise(resolve => setTimeout(resolve, 1500));
       } else {
         try {
-          const response = await fetch('http://localhost:8000/analyze', {
+          const response = await fetch('http://localhost:8000/api/analyze', {
             method: 'POST',
             body: formData,
           });
@@ -225,13 +225,3 @@ export const FileUpload = ({ onFileAnalyzed, isProcessing, setIsProcessing }: Fi
 
 // Update the fetch call in your existing FileUpload component
 import { apiClient } from '@/lib/api';
-
-// Replace the existing fetch logic with:
-try {
-  const results = await apiClient.analyzeFile(acceptedFiles[0]);
-  onFileAnalyzed(results);
-} catch (apiError) {
-  console.error('API call failed:', apiError);
-  // Your existing fallback logic
-  results = generateRandomResults();
-}
