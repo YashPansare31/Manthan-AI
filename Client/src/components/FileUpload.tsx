@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { sampleAnalysisResults, generateRandomResults } from '@/utils/demoData';
+import { apiClient } from '@/lib/api';
 
 interface FileUploadProps {
   onFileAnalyzed: (results: any) => void;
@@ -37,8 +38,8 @@ export const FileUpload = ({ onFileAnalyzed, isProcessing, setIsProcessing }: Fi
 
     try {
       let formData;
+      const file = acceptedFiles[0];
       if (!isDemoMode) {
-        const file = acceptedFiles[0];
         formData = new FormData();
         formData.append('file', file);
       }
@@ -67,21 +68,12 @@ export const FileUpload = ({ onFileAnalyzed, isProcessing, setIsProcessing }: Fi
         await new Promise(resolve => setTimeout(resolve, 1500));
       } else {
         try {
-          const response = await fetch('http://localhost:8000/api/analyze', {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
-          }
-
-          results = await response.json();
+          results = await apiClient.analyzeFile(file);
         } catch (apiError) {
           // Fallback to demo data if API is unavailable
           console.log('API unavailable, using demo data');
           results = generateRandomResults();
-          
+
           // Add a longer delay to simulate processing
           await new Promise(resolve => setTimeout(resolve, 1500));
         }
@@ -222,6 +214,3 @@ export const FileUpload = ({ onFileAnalyzed, isProcessing, setIsProcessing }: Fi
     </div>
   );
 };
-
-// Update the fetch call in your existing FileUpload component
-import { apiClient } from '@/lib/api';
