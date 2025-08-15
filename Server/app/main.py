@@ -17,6 +17,8 @@ from app.routers import analyze
 from app.utils.file_handler import cleanup_temp_files
 from app.utils.config import get_settings
 
+
+
 # Get settings
 settings = get_settings()
 
@@ -151,6 +153,7 @@ async def general_exception_handler(request, exc):
 # Include routers
 app.include_router(analyze.router, prefix="/api", tags=["analysis"])
 
+
 # Root endpoints
 @app.get("/")
 async def root():
@@ -246,7 +249,6 @@ async def api_info():
             "analysis": "Based on GPT-4o-mini usage"
         }
     }
-
 # Development only endpoints
 if settings.DEBUG:
     @app.get("/debug/settings")

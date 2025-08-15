@@ -27,3 +27,4 @@ pytest-asyncio==0.21.1
 
 # Production server (optional, can use uvicorn)
 gunicorn==21.2.0
+
