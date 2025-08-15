@@ -10,10 +10,30 @@ import heroBackground from '@/assets/hero-background.jpg';
 import { sampleAnalysisResults } from '@/utils/demoData';
 
 interface AnalysisResults {
-  transcription: string;
+  transcript: Array<{
+    id: string;
+    speaker: string;
+    text: string;
+    start_time: number;
+    end_time: number;
+    confidence: number;
+  }>;
   summary: string;
-  action_items: string[];
-  decision_points: string[];
+  action_items: Array<{
+    id: string;
+    text: string;
+    assignee?: string;
+    deadline?: string;
+    priority: string;
+    confidence: number;
+  }>;
+  key_decisions: Array<{
+    id: string;
+    decision: string;
+    rationale?: string;
+    impact: string;
+    confidence: number;
+  }>;
   processing_time: number;
 }
 
@@ -35,10 +55,10 @@ const Index = () => {
     if (!results) return;
     
     const exportData = {
-      transcription: results.transcription,
+      transcript: results.transcript,
       summary: results.summary,
       action_items: results.action_items,
-      decision_points: results.decision_points,
+      key_decisions: results.key_decisions,
       exported_at: new Date().toISOString(),
     };
     

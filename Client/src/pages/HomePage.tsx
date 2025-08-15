@@ -9,10 +9,30 @@ import { LogIn, Mail, Github, Chrome, Brain, Zap, Shield, Clock } from 'lucide-r
 import heroBackground from '@/assets/hero-background.jpg';
 
 interface AnalysisResults {
-  transcription: string;
+  transcript: Array<{
+    id: string;
+    speaker: string;
+    text: string;
+    start_time: number;
+    end_time: number;
+    confidence: number;
+  }>;
   summary: string;
-  action_items: string[];
-  decision_points: string[];
+  action_items: Array<{
+    id: string;
+    text: string;
+    assignee?: string;
+    deadline?: string;
+    priority: string;
+    confidence: number;
+  }>;
+  key_decisions: Array<{
+    id: string;
+    decision: string;
+    rationale?: string;
+    impact: string;
+    confidence: number;
+  }>;
   processing_time: number;
 }
 

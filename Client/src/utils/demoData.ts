@@ -1,5 +1,5 @@
 export const sampleAnalysisResults = {
-  transcription: `Welcome everyone to today's quarterly planning meeting. I'm Sarah from the product team, and we have John from engineering, Lisa from marketing, and Mike from sales with us today.
+  transcript: `Welcome everyone to today's quarterly planning meeting. I'm Sarah from the product team, and we have John from engineering, Lisa from marketing, and Mike from sales with us today.
 
 Let's start with our Q4 objectives. John, can you give us an update on the technical infrastructure improvements?
 
@@ -36,7 +36,7 @@ Perfect. Let's move forward with these decisions. Our next meeting is scheduled 
     "Finalize partnership collaboration agreements"
   ],
 
-  decision_points: [
+  key_decisions: [
     "Prioritize authentication system completion over mobile app optimization",
     "Approve 20% discount strategy for two-year enterprise contracts",
     "Increase marketing budget allocation based on Q3 performance",
@@ -50,7 +50,7 @@ Perfect. Let's move forward with these decisions. Our next meeting is scheduled 
 
 export const generateRandomResults = () => {
   const variations = {
-    transcription: [
+    transcript: [
       "Today's sprint retrospective focused on team velocity and process improvements...",
       "The client presentation went well, with several key stakeholders expressing interest...",
       "Our product roadmap discussion covered the next three quarters of development...",
@@ -68,7 +68,7 @@ export const generateRandomResults = () => {
       ["Finalize Q1 roadmap", "Allocate development resources", "Update stakeholder timelines"],
       ["Patch critical vulnerabilities", "Update security protocols", "Schedule penetration testing"]
     ],
-    decision_points: [
+    key_decisions: [
       ["Adopt new project management tool", "Increase sprint duration to 2 weeks"],
       ["Accept client requirements", "Adjust project timeline accordingly"],
       ["Prioritize mobile development", "Delay desktop feature updates"],
@@ -76,13 +76,13 @@ export const generateRandomResults = () => {
     ]
   };
 
-  const randomIndex = Math.floor(Math.random() * variations.transcription.length);
+  const randomIndex = Math.floor(Math.random() * variations.transcript.length);
   
   return {
-    transcription: variations.transcription[randomIndex],
+    transcript: variations.transcript[randomIndex],
     summary: variations.summary[randomIndex],
     action_items: variations.action_items[randomIndex],
-    decision_points: variations.decision_points[randomIndex],
+    key_decisions: variations.key_decisions[randomIndex],
     processing_time: Math.random() * 60 + 20 // 20-80 seconds
   };
 };
