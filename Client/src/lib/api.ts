@@ -18,10 +18,30 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 // Frontend interface (what components expect)
 export interface AnalysisResults {
-  transcription: string;
+  transcript: Array<{
+    id: string;
+    speaker: string;
+    text: string;
+    start_time: number;
+    end_time: number;
+    confidence: number;
+  }>;
   summary: string;
-  action_items: string[];
-  decision_points: string[];
+  action_items: Array<{
+    id: string;
+    text: string;
+    assignee?: string;
+    deadline?: string;
+    priority: string;
+    confidence: number;
+  }>;
+  key_decisions: Array<{
+    id: string;
+    decision: string;
+    rationale?: string;
+    impact: string;
+    confidence: number;
+  }>;
   processing_time: number;
 }
 
@@ -57,10 +77,10 @@ interface BackendAnalysisResponse {
 // Transform backend response to frontend format
 function transformBackendResponse(backendData: BackendAnalysisResponse): AnalysisResults {
   return {
-    transcription: backendData.transcript?.map(segment => segment.text).join(' ') || '',
+    transcript: backendData.transcript || [],
     summary: backendData.summary || '',
-    action_items: backendData.action_items?.map(item => item.text) || [],
-    decision_points: backendData.key_decisions?.map(decision => decision.decision) || [],
+    action_items: backendData.action_items || [],
+    key_decisions: backendData.key_decisions || [],
     processing_time: backendData.processing_time || 0
   };
 }
