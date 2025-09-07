@@ -1,12 +1,18 @@
 interface ImportMetaEnv {
   readonly VITE_API_URL: string
   readonly VITE_APP_NAME: string
+  readonly VITE_AUTH0_DOMAIN: string
+  readonly VITE_AUTH0_CLIENT_ID: string
+  readonly VITE_AUTH0_AUDIENCE: string
   // add more env variables as needed
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+// Add Auth0 import for the hook
+import { useAuth0 } from '@auth0/auth0-react'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
@@ -61,17 +67,37 @@ function transformBackendResponse(backendData: BackendAnalysisResponse): Analysi
 
 export class ApiClient {
   private baseURL: string;
+  private getAccessToken?: () => Promise<string>;
 
-  constructor(baseURL: string = API_BASE_URL) {
+  constructor(baseURL: string = API_BASE_URL, getAccessToken?: () => Promise<string>) {
     this.baseURL = baseURL;
+    this.getAccessToken = getAccessToken;
+  }
+
+  private async getAuthHeaders(): Promise<HeadersInit> {
+    const headers: HeadersInit = {};
+
+    if (this.getAccessToken) {
+      try {
+        const token = await this.getAccessToken();
+        headers['Authorization'] = `Bearer ${token}`;
+      } catch (error) {
+        console.warn('Failed to get access token:', error);
+      }
+    }
+
+    return headers;
   }
 
   async analyzeFile(file: File): Promise<AnalysisResults> {
     const formData = new FormData();
     formData.append('file', file);
 
+    const authHeaders = await this.getAuthHeaders();
+
     const response = await fetch(`${this.baseURL}/analyze`, {
       method: 'POST',
+      headers: authHeaders,
       body: formData,
     });
 
@@ -85,7 +111,15 @@ export class ApiClient {
   }
 
   async getSupportedFormats(): Promise<any> {
-    const response = await fetch(`${this.baseURL}/formats`);
+    const authHeaders = await this.getAuthHeaders();
+
+    const response = await fetch(`${this.baseURL}/formats`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+    });
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -95,7 +129,15 @@ export class ApiClient {
   }
 
   async healthCheck(): Promise<any> {
-    const response = await fetch(`${this.baseURL.replace('/api', '')}/health`);
+    const authHeaders = await this.getAuthHeaders();
+
+    const response = await fetch(`${this.baseURL.replace('/api', '')}/health`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+    });
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -105,4 +147,15 @@ export class ApiClient {
   }
 }
 
+// Create authenticated API client hook
+export const useAuthenticatedApiClient = () => {
+  const { getAccessTokenSilently, isAuthenticated } = useAuth0();
+  
+  return new ApiClient(
+    API_BASE_URL, 
+    isAuthenticated ? getAccessTokenSilently : undefined
+  );
+};
+
+// Keep the default client for backwards compatibility (non-authenticated)
 export const apiClient = new ApiClient();

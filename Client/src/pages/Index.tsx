@@ -81,7 +81,7 @@ const Index = () => {
   const handleShare = () => {
     if (!results) return;
     
-    const shareText = `Meeting Analysis Summary:\n\n${results.summary}\n\nAction Items:\n${results.action_items.map(item => `• ${item}`).join('\n')}`;
+   const shareText = `Meeting Analysis Summary:\n\n${results.summary}\n\nAction Items:\n${results.action_items.map(item => `• ${typeof item === 'string' ? item : item.text}`).join('\n')}`;
     
     if (navigator.share) {
       navigator.share({
@@ -305,3 +305,4 @@ const Index = () => {
 };
 
 export default Index;
+
