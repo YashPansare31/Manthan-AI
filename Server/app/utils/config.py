@@ -1,100 +1,57 @@
-# ===== backend/app/utils/config.py (COMPLETE VERSION) =====
 """
-Complete configuration management for the application.
+Configuration management for the Meeting Analysis API.
+Updated for Pydantic v1 compatibility.
 """
 
 import os
+import logging
 from functools import lru_cache
 from typing import List
-from pydantic_settings import BaseSettings
+
+from pydantic import BaseSettings  # v1 import
 
 
 class Settings(BaseSettings):
-    """Application settings with validation."""
+    """Application settings with environment variable support."""
     
-    # API Keys
-    OPENAI_API_KEY: str = ""
-    ASSEMBLYAI_API_KEY: str = ""  # Alternative transcription service
-    
-    # Application
+    # Application settings
     APP_NAME: str = "Meeting Analysis API"
     APP_VERSION: str = "1.0.0"
-    DEBUG: bool = True
+    DEBUG: bool = False
     
-    # Server
+    # API Configuration
+    OPENAI_API_KEY: str = ""
+    ASSEMBLYAI_API_KEY: str = ""  # Optional alternative
+    
+    # Server settings
     HOST: str = "127.0.0.1"
     PORT: int = 8000
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
     
-    # CORS
-    ALLOWED_ORIGINS: str = "http://localhost:8080,http://localhost:3000,http://localhost:5173"
-    
-    @property
-    def allowed_origins_list(self) -> List[str]:
-        """Convert CORS origins string to list."""
-        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
-    
-    # File processing
-    MAX_FILE_SIZE: int = 26214400  # 25MB in bytes
-    SUPPORTED_FORMATS: str = "mp3,wav,m4a,mp4,ogg,flac"
-    TEMP_DIR: str = "/tmp/meeting_analysis"
-    
-    @property
-    def supported_formats_list(self) -> List[str]:
-        """Convert supported formats string to list."""
-        return [fmt.strip().lower() for fmt in self.SUPPORTED_FORMATS.split(",")]
-    
-    # Processing limits
-    MAX_CONCURRENT_JOBS: int = 3
-    PROCESSING_TIMEOUT: int = 300  # 5 minutes
+    # File handling
+    MAX_FILE_SIZE: int = 25 * 1024 * 1024  # 25MB
     MAX_AUDIO_DURATION: int = 600  # 10 minutes
-    
-    # OpenAI Configuration
-    OPENAI_MODEL: str = "gpt-4o-mini"  # Cost-effective model
-    WHISPER_MODEL: str = "whisper-1"   # OpenAI's hosted Whisper
-    MAX_TRANSCRIPT_LENGTH: int = 4000  # Limit text sent to GPT (cost control)
-    
-    # Analysis limits (cost control)
-    MAX_ACTION_ITEMS: int = 10
-    MAX_KEY_DECISIONS: int = 5
-    MAX_TOPICS: int = 5
+    SUPPORTED_FORMATS: str = "mp3,wav,mp4,m4a,ogg,flac"
+    TEMP_DIR: str = "/tmp/meeting_analysis"
     
     # Logging
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     
-    # Cache settings (optional)
-    REDIS_URL: str = "redis://localhost:6379/0"
-    CACHE_TTL: int = 3600  # 1 hour
-    ENABLE_CACHING: bool = False
+    @property
+    def allowed_origins_list(self) -> List[str]:
+        """Get allowed origins as a list."""
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
     
-    # Database settings (optional)
-    DATABASE_URL: str = "sqlite:///./meeting_analysis.db"
-    
-    # Security
-    SECRET_KEY: str = "change-this-in-production"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    
-    # Feature flags
-    ENABLE_SPEAKER_DIARIZATION: bool = True
-    ENABLE_SENTIMENT_ANALYSIS: bool = True
-    ENABLE_ACTION_ITEM_EXTRACTION: bool = True
-    ENABLE_SUMMARIZATION: bool = True
-    ENABLE_TOPIC_EXTRACTION: bool = True
-    
-    # Rate limiting
-    RATE_LIMIT_REQUESTS: int = 10  # requests per minute
-    RATE_LIMIT_WINDOW: int = 60   # window in seconds
-    
-    # Monitoring
-    ENABLE_METRICS: bool = False
-    METRICS_PORT: int = 8001
+    @property
+    def supported_formats_list(self) -> List[str]:
+        """Get supported formats as a list."""
+        return [fmt.strip().lower() for fmt in self.SUPPORTED_FORMATS.split(",")]
     
     class Config:
-        """Pydantic config."""
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = True
-        extra = "ignore"  # Ignore extra environment variables
     
     def validate_api_keys(self) -> bool:
         """Validate that required API keys are present."""
@@ -141,34 +98,3 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
-
-
-# ===== backend/app/utils/__init__.py (COMPLETE VERSION) =====
-"""
-Utilities package for the Meeting Analysis API.
-"""
-
-from .config import get_settings, Settings
-from .file_handler import (
-    validate_audio_file,
-    cleanup_temp_files,
-    get_file_info,
-    create_temp_directory,
-    save_uploaded_file,
-    get_safe_filename,
-    estimate_processing_time,
-    check_disk_space
-)
-
-__all__ = [
-    "get_settings",
-    "Settings",
-    "validate_audio_file",
-    "cleanup_temp_files", 
-    "get_file_info",
-    "create_temp_directory",
-    "save_uploaded_file",
-    "get_safe_filename",
-    "estimate_processing_time",
-    "check_disk_space"
-]
