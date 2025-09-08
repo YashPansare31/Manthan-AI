@@ -9,12 +9,6 @@ httpx==0.25.2
 # Audio processing (lightweight)
 pydub==0.25.1
 
-
-
-# Data handling and validation
-pydantic==1.10.13
-pydantic-settings==1.10.13
-
 # Environment and configuration
 python-dotenv==1.0.0
 
