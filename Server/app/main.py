@@ -81,7 +81,7 @@ app = FastAPI(
     title=settings.APP_NAME,
     description="AI-powered meeting transcription and analysis service using OpenAI APIs",
     version=settings.APP_VERSION,
-    docs_url="/docs" if settings.DEBUG else None,
+    #docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
     lifespan=lifespan,
     # Custom OpenAPI metadata
