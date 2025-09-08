@@ -1,42 +1,39 @@
 """
-Configuration management for the Meeting Analysis API.
-Updated for Pydantic v1 compatibility.
+Simple configuration management - no BaseSettings needed.
 """
 
 import os
-import logging
 from functools import lru_cache
 from typing import List
 
-from pydantic import BaseSettings  # v1 import
 
-
-class Settings(BaseSettings):
-    """Application settings with environment variable support."""
+class Settings:
+    """Simple settings class using environment variables."""
     
-    # Application settings
-    APP_NAME: str = "Meeting Analysis API"
-    APP_VERSION: str = "1.0.0"
-    DEBUG: bool = False
-    
-    # API Configuration
-    OPENAI_API_KEY: str = ""
-    ASSEMBLYAI_API_KEY: str = ""  # Optional alternative
-    
-    # Server settings
-    HOST: str = "127.0.0.1"
-    PORT: int = 8000
-    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
-    
-    # File handling
-    MAX_FILE_SIZE: int = 25 * 1024 * 1024  # 25MB
-    MAX_AUDIO_DURATION: int = 600  # 10 minutes
-    SUPPORTED_FORMATS: str = "mp3,wav,mp4,m4a,ogg,flac"
-    TEMP_DIR: str = "/tmp/meeting_analysis"
-    
-    # Logging
-    LOG_LEVEL: str = "INFO"
-    LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    def __init__(self):
+        # Application settings
+        self.APP_NAME = "Meeting Analysis API"
+        self.APP_VERSION = "1.0.0"
+        self.DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+        
+        # API Configuration
+        self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+        self.ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
+        
+        # Server settings
+        self.HOST = os.getenv("HOST", "127.0.0.1")
+        self.PORT = int(os.getenv("PORT", "8000"))
+        self.ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173")
+        
+        # File handling
+        self.MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB
+        self.MAX_AUDIO_DURATION = 600  # 10 minutes
+        self.SUPPORTED_FORMATS = "mp3,wav,mp4,m4a,ogg,flac"
+        self.TEMP_DIR = "/tmp/meeting_analysis"
+        
+        # Logging
+        self.LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+        self.LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     
     @property
     def allowed_origins_list(self) -> List[str]:
@@ -47,11 +44,6 @@ class Settings(BaseSettings):
     def supported_formats_list(self) -> List[str]:
         """Get supported formats as a list."""
         return [fmt.strip().lower() for fmt in self.SUPPORTED_FORMATS.split(",")]
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
     
     def validate_api_keys(self) -> bool:
         """Validate that required API keys are present."""
