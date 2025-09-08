@@ -28,3 +28,12 @@ dist-ssr
 PRD.pdf
 
 venv/
+
+.env.local
+.env.production
+
+.vercel
+
+
+# Build output
+dist/
