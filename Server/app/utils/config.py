@@ -1,5 +1,5 @@
 """
-Simple configuration management - no BaseSettings needed.
+Configuration management - NO PYDANTIC.
 """
 
 import os
@@ -8,17 +8,16 @@ from typing import List
 
 
 class Settings:
-    """Simple settings class using environment variables."""
+    """Settings class using only environment variables."""
     
     def __init__(self):
         # Application settings
         self.APP_NAME = "Meeting Analysis API"
-        self.APP_VERSION = "1.0.0"
+        self.APP_VERSION = "1.0.0" 
         self.DEBUG = os.getenv("DEBUG", "false").lower() == "true"
         
         # API Configuration
         self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-        self.ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
         
         # Server settings
         self.HOST = os.getenv("HOST", "127.0.0.1")
@@ -37,16 +36,13 @@ class Settings:
     
     @property
     def allowed_origins_list(self) -> List[str]:
-        """Get allowed origins as a list."""
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
     
     @property
     def supported_formats_list(self) -> List[str]:
-        """Get supported formats as a list."""
         return [fmt.strip().lower() for fmt in self.SUPPORTED_FORMATS.split(",")]
     
     def validate_api_keys(self) -> bool:
-        """Validate that required API keys are present."""
         if not self.OPENAI_API_KEY:
             return False
         if not self.OPENAI_API_KEY.startswith("sk-"):
@@ -54,16 +50,13 @@ class Settings:
         return True
     
     def get_temp_dir(self) -> str:
-        """Get temp directory, creating if necessary."""
         os.makedirs(self.TEMP_DIR, exist_ok=True)
         return self.TEMP_DIR
     
     def is_production(self) -> bool:
-        """Check if running in production mode."""
         return not self.DEBUG
     
     def get_log_config(self) -> dict:
-        """Get logging configuration."""
         return {
             "version": 1,
             "disable_existing_loggers": False,
@@ -88,5 +81,4 @@ class Settings:
 
 @lru_cache()
 def get_settings() -> Settings:
-    """Get cached settings instance."""
     return Settings()

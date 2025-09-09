@@ -1,24 +1,8 @@
-# FastAPI and web framework
-fastapi==0.68.0
-uvicorn==0.15.0
-python-multipart==0.0.5
-
-# HTTP client for API calls
-httpx==0.24.0
-
-# Audio processing (lightweight)
+fastapi==0.104.1
+uvicorn==0.24.0
+python-multipart==0.0.6
+httpx==0.25.2
 pydub==0.25.1
-
-# Data handling and validation
-pydantic==1.8.2
-
-
-# Environment and configuration
-python-dotenv==0.19.0
-
-# File operations
-aiofiles==0.7.0
-
-# Production server (optional, can use uvicorn)
-gunicorn==20.1.0
-
+python-dotenv==1.0.0
+aiofiles==23.2.1
+gunicorn==21.2.0

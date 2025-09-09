@@ -81,7 +81,7 @@ app = FastAPI(
     title=settings.APP_NAME,
     description="AI-powered meeting transcription and analysis service using OpenAI APIs",
     version=settings.APP_VERSION,
-    #docs_url="/docs" if settings.DEBUG else None,
+    docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
     lifespan=lifespan,
     # Custom OpenAPI metadata
@@ -296,16 +296,3 @@ async def startup_event():
     if settings.DEBUG:
         logger.info(f"📚 API documentation available at: /docs")
         logger.info(f"🔍 Debug endpoints available at: /debug/*")
-
-# Vercel serverless handler
-try:
-    from mangum import Mangum
-    handler = Mangum(app)
-except ImportError:
-    # mangum not installed, running locally
-    pass
-
-# For Vercel deployment
-def app_handler(request, context):
-    """Vercel serverless function handler."""
-    return handler(request, context)
