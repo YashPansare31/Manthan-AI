@@ -28,7 +28,7 @@ class ProductionNLPAnalyzer:
     def __init__(self):
         """Initialize production analyzer."""
         self.openai_api_key = settings.OPENAI_API_KEY
-        self.assemblyai_api_key = self.assemblyai_api_key = getattr(settings, 'ASSEMBLYAI_API_KEY', None)  # Alternative transcription
+        #self.assemblyai_api_key = self.assemblyai_api_key = getattr(settings, 'ASSEMBLYAI_API_KEY', None)  # Alternative transcription
         self.http_client = httpx.AsyncClient(timeout=60.0)
         
         # Validate API keys

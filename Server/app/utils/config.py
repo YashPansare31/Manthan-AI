@@ -18,7 +18,7 @@ class Settings:
         
         # API Configuration
         self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-        self.ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
+        #self.ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY", "")
         
         # Server settings
         self.HOST = os.getenv("HOST", "127.0.0.1")
