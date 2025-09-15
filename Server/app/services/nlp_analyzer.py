@@ -35,6 +35,9 @@ class ProductionNLPAnalyzer:
         if not self.openai_api_key:
             logger.error("OpenAI API key not found!")
         
+        logger.info(f"🔑 API Key loaded: {bool(self.openai_api_key)} - Length: {len(self.openai_api_key) if self.openai_api_key else 0}")
+
+        
         logger.info("Production NLP Analyzer initialized")
 
     async def _call_openai_transcription(self, audio_file) -> dict:
