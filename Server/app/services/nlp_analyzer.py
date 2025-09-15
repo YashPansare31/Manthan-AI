@@ -36,6 +36,16 @@ class ProductionNLPAnalyzer:
             logger.error("OpenAI API key not found!")
         
         logger.info("Production NLP Analyzer initialized")
+
+    async def _call_openai_transcription(self, audio_file) -> dict:
+        """
+        Call OpenAI Whisper API.
+        """
+    
+        # ADD THIS DEBUG LOG
+        logger.info(f"🔑 Using API key: {self.openai_api_key[:10]}...{self.openai_api_key[-4:]}")
+    
+        # Rest of your existing code...
     
     async def analyze_meeting(self, audio_path: str) -> Dict[str, Any]:
         """
