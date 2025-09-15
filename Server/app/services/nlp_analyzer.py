@@ -41,14 +41,36 @@ class ProductionNLPAnalyzer:
         logger.info("Production NLP Analyzer initialized")
 
     async def _call_openai_transcription(self, audio_file) -> dict:
-        """
-        Call OpenAI Whisper API.
-        """
-    
-        # ADD THIS DEBUG LOG
-        logger.info(f"🔑 Using API key: {self.openai_api_key[:10]}...{self.openai_api_key[-4:]}")
-    
-        # Rest of your existing code...
+        """Call OpenAI Whisper API."""
+        
+        headers = {
+            "Authorization": f"Bearer {self.openai_api_key}"
+        }
+        
+        # ADD DEBUG LOGGING
+        logger.info(f"🔍 Sending request with headers: {list(headers.keys())}")
+        logger.info(f"🔍 Auth header starts with: {headers['Authorization'][:20]}...")
+        
+        files = {
+            "file": audio_file,
+            "model": (None, "whisper-1"),
+            "response_format": (None, "verbose_json"),
+            "timestamp_granularities[]": (None, "segment")
+        }
+        
+        response = await self.http_client.post(
+            "https://api.openai.com/v1/audio/transcriptions",
+            headers=headers,
+            files=files
+        )
+        
+        # ADD RESPONSE DEBUG
+        logger.info(f"🔍 Response status: {response.status_code}")
+        if response.status_code != 200:
+            logger.error(f"🔍 Response body: {response.text}")
+        
+        response.raise_for_status()
+        return response.json()
     
     async def analyze_meeting(self, audio_path: str) -> Dict[str, Any]:
         """
