@@ -67,17 +67,18 @@ export const FileUpload = ({ onFileAnalyzed, isProcessing, setIsProcessing }: Fi
         results = sampleAnalysisResults;
         await new Promise(resolve => setTimeout(resolve, 1500));
       } else {
+        console.log('Uploading file:', file.name, 'Size:', file.size);
+  
         try {
           results = await apiClient.analyzeFile(file);
+          console.log('✅ API Success:', results);
         } catch (apiError) {
-          // Fallback to demo data if API is unavailable
-          console.log('API unavailable, using demo data');
-          results = generateRandomResults();
+          console.error('❌ API Error:', apiError);
 
-          // Add a longer delay to simulate processing
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Don't silently use demo data - show the actual error
+          throw new Error(`Server error: ${apiError.message || 'Failed to process file'}. Check server logs.`);
         }
-      }
+        }
 
       for (let i = 60; i <= 100; i += 10) {
         setUploadProgress(i);
