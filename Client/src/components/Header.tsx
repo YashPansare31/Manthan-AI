@@ -18,6 +18,21 @@ export const Header = ({ processingTime, isProcessing }: HeaderProps) => {
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const checkApiHealth = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/health');
+        setApiStatus(response.ok ? 'online' : 'offline');
+      } catch {
+        setApiStatus('offline');
+      }
+    };
+
+    checkApiHealth();
+    const interval = setInterval(checkApiHealth, 30000); // Check every 30s
+    return () => clearInterval(interval);
+  }, []);
+
   const getStatusColor = () => {
     switch (apiStatus) {
       case 'online': return 'bg-green-500';
@@ -51,18 +66,22 @@ export const Header = ({ processingTime, isProcessing }: HeaderProps) => {
             <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
               <Brain className="w-6 h-6 text-white" />
             </div>
-            <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full animate-glow-pulse">
-              <div className={`w-full h-full rounded-full ${getStatusColor()}`} />
-            </div>
+            {import.meta.env.DEV && (
+              <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full animate-glow-pulse">
+                <div className={`w-full h-full rounded-full ${getStatusColor()}`} />
+              </div>
+            )}
           </div>
           <div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
               Manthan AI
             </h1>
-            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-              <Activity className="w-3 h-3" />
-              <span className="capitalize">{apiStatus}</span>
-            </div>
+            {import.meta.env.DEV && (
+              <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                <Activity className="w-3 h-3" />
+                <span className="capitalize">{apiStatus}</span>
+              </div>
+            )}
           </div>
         </div>
 
