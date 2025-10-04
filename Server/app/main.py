@@ -309,3 +309,5 @@ async def check_env():
         "api_key_preview": api_key[:10] + "..." if api_key else "NONE",
         "all_env_vars": list(os.environ.keys())  # See all available env vars
     }
+
+app.include_router(router)
