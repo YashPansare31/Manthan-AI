@@ -12,6 +12,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi import APIRouter
 
 from app.routers import analyze
 from app.utils.file_handler import cleanup_temp_files
@@ -296,3 +297,15 @@ async def startup_event():
     if settings.DEBUG:
         logger.info(f"📚 API documentation available at: /docs")
         logger.info(f"🔍 Debug endpoints available at: /debug/*")
+
+router = APIRouter()
+
+@router.get("/debug/env")
+async def check_env():
+    api_key = os.getenv("OPENAI_API_KEY")
+    return {
+        "api_key_exists": bool(api_key),
+        "api_key_length": len(api_key) if api_key else 0,
+        "api_key_preview": api_key[:10] + "..." if api_key else "NONE",
+        "all_env_vars": list(os.environ.keys())  # See all available env vars
+    }
