@@ -1,5 +1,5 @@
 """
-Complete production FastAPI main application.
+Complete production FastAPI main application (with Render environment debug).
 """
 
 import os
@@ -18,7 +18,9 @@ from app.routers import analyze
 from app.utils.file_handler import cleanup_temp_files
 from app.utils.config import get_settings
 
-
+# ✅ DEBUG: Print environment check for Render startup logs
+print("🧠 DEBUG → OPENAI_API_KEY (first 8 chars):", 
+      os.getenv("OPENAI_API_KEY")[:8] + "..." if os.getenv("OPENAI_API_KEY") else "❌ NOT FOUND")
 
 # Get settings
 settings = get_settings()
@@ -36,27 +38,31 @@ async def lifespan(app: FastAPI):
     logger.info(f"📊 Version: {settings.APP_VERSION}")
     logger.info(f"🔧 Debug mode: {settings.DEBUG}")
     
+    # ✅ Extra: Log API key existence at startup
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key:
+        logger.info(f"✅ OPENAI_API_KEY loaded (length: {len(api_key)} chars)")
+    else:
+        logger.error("❌ OPENAI_API_KEY missing in environment!")
+
     # Validate configuration
     try:
-        # Check API keys
         if not settings.validate_api_keys():
             logger.error("❌ OpenAI API key validation failed!")
-            logger.error("Please set OPENAI_API_KEY environment variable")
             if not settings.DEBUG:
                 raise RuntimeError("Invalid API configuration")
         else:
-            logger.info("✅ OpenAI API key validated")
-        
-        # Create temp directory
+            logger.info("✅ OpenAI API key validated successfully")
+
+        # Temp directory setup
         temp_dir = settings.get_temp_dir()
         logger.info(f"📁 Temp directory: {temp_dir}")
-        
-        # Check disk space
+
         import shutil
         disk_usage = shutil.disk_usage(temp_dir)
         available_gb = disk_usage.free / (1024**3)
         logger.info(f"💾 Available disk space: {available_gb:.1f} GB")
-        
+
         if available_gb < 1.0:
             logger.warning("⚠️ Low disk space available!")
         
@@ -85,23 +91,13 @@ app = FastAPI(
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
     lifespan=lifespan,
-    # Custom OpenAPI metadata
-    contact={
-        "name": "Meeting Analysis API",
-        "url": "https://github.com/yourusername/meeting-analysis",
-    },
-    license_info={
-        "name": "MIT",
-        "url": "https://opensource.org/licenses/MIT",
-    },
+    contact={"name": "Meeting Analysis API", "url": "https://github.com/yourusername/meeting-analysis"},
+    license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
 )
 
-# Security middleware (production only)
+# Security middleware
 if settings.is_production():
-    app.add_middleware(
-        TrustedHostMiddleware, 
-        allowed_hosts=["*"]  # Configure with your actual domains in production
-    )
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 # CORS middleware
 app.add_middleware(
@@ -116,73 +112,44 @@ app.add_middleware(
 # Custom exception handlers
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request, exc):
-    """Handle HTTP exceptions with consistent format."""
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            "error": "HTTP Error",
-            "message": exc.detail,
-            "status_code": exc.status_code
-        }
+        content={"error": "HTTP Error", "message": exc.detail, "status_code": exc.status_code}
     )
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
-    """Handle request validation errors."""
     return JSONResponse(
         status_code=422,
-        content={
-            "error": "Validation Error",
-            "message": "Invalid request data",
-            "details": exc.errors()
-        }
+        content={"error": "Validation Error", "message": "Invalid request data", "details": exc.errors()}
     )
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc):
-    """Handle unexpected exceptions."""
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    
     return JSONResponse(
         status_code=500,
-        content={
-            "error": "Internal Server Error",
-            "message": "An unexpected error occurred" if settings.is_production() else str(exc)
-        }
+        content={"error": "Internal Server Error", "message": "An unexpected error occurred" if settings.is_production() else str(exc)}
     )
 
-# Include routers
+# Routers
 app.include_router(analyze.router, prefix="/api", tags=["analysis"])
-
 
 # Root endpoints
 @app.get("/")
 async def root():
-    """API root endpoint with basic information."""
     return {
         "message": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "status": "operational",
         "docs": "/docs" if settings.DEBUG else "disabled",
-        "endpoints": {
-            "analyze": "/api/analyze",
-            "health": "/health",
-            "status": "/api/status"
-        }
+        "endpoints": {"analyze": "/api/analyze", "health": "/health", "status": "/api/status"}
     }
 
 @app.get("/health")
 async def health_check():
-    """
-    Health check endpoint for load balancers and monitoring.
-    
-    Returns:
-        Service health status and dependencies
-    """
+    import time
     try:
-        # Check critical dependencies
-        import time
-        
         health_status = {
             "status": "healthy",
             "timestamp": int(time.time()),
@@ -190,7 +157,7 @@ async def health_check():
             "services": {
                 "openai_api": settings.validate_api_keys(),
                 "temp_directory": os.path.exists(settings.get_temp_dir()),
-                "disk_space_available": True  # Could add actual check
+                "disk_space_available": True
             },
             "configuration": {
                 "debug_mode": settings.DEBUG,
@@ -199,27 +166,15 @@ async def health_check():
                 "supported_formats": len(settings.supported_formats_list)
             }
         }
-        
-        # Check if any critical service is down
-        critical_services = ["openai_api", "temp_directory"]
-        if not all(health_status["services"][service] for service in critical_services):
+        if not all(health_status["services"][s] for s in ["openai_api", "temp_directory"]):
             health_status["status"] = "degraded"
-        
         return health_status
-        
     except Exception as e:
         logger.error(f"Health check failed: {e}")
-        return {
-            "status": "unhealthy",
-            "timestamp": int(time.time()),
-            "error": str(e) if settings.DEBUG else "Health check failed"
-        }
+        return {"status": "unhealthy", "error": str(e)}
 
 @app.get("/info")
 async def api_info():
-    """
-    Get detailed API information and capabilities.
-    """
     return {
         "api": {
             "name": settings.APP_NAME,
@@ -235,69 +190,10 @@ async def api_info():
                 "topics": settings.ENABLE_TOPIC_EXTRACTION,
                 "decisions": True
             }
-        },
-        "limits": {
-            "max_file_size": f"{settings.MAX_FILE_SIZE / 1024 / 1024:.1f} MB",
-            "max_duration": f"{settings.MAX_AUDIO_DURATION} seconds",
-            "supported_formats": settings.supported_formats_list,
-            "max_action_items": settings.MAX_ACTION_ITEMS,
-            "max_decisions": settings.MAX_KEY_DECISIONS,
-            "max_topics": settings.MAX_TOPICS
-        },
-        "pricing": {
-            "model": "Pay-per-use via OpenAI API",
-            "transcription": "$0.006 per minute",
-            "analysis": "Based on GPT-4o-mini usage"
         }
     }
-# Development only endpoints
-if settings.DEBUG:
-    @app.get("/debug/settings")
-    async def debug_settings():
-        """Debug endpoint to view current settings (development only)."""
-        return {
-            "note": "This endpoint is only available in debug mode",
-            "settings": {
-                "app_name": settings.APP_NAME,
-                "debug": settings.DEBUG,
-                "openai_key_configured": bool(settings.OPENAI_API_KEY),
-                "max_file_size": settings.MAX_FILE_SIZE,
-                "temp_dir": settings.TEMP_DIR,
-                "cors_origins": settings.allowed_origins_list,
-                "supported_formats": settings.supported_formats_list
-            }
-        }
-    
-    @app.post("/debug/test-api")
-    async def debug_test_api():
-        """Test OpenAI API connectivity (development only)."""
-        try:
-            import httpx
-            
-            # Test simple API call
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    "https://api.openai.com/v1/models",
-                    headers={"Authorization": f"Bearer {settings.OPENAI_API_KEY}"}
-                )
-                
-                if response.status_code == 200:
-                    return {"status": "success", "message": "OpenAI API is accessible"}
-                else:
-                    return {"status": "error", "message": f"API returned {response.status_code}"}
-                    
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
 
-# Add startup event logging
-@app.on_event("startup")
-async def startup_event():
-    """Additional startup logging."""
-    logger.info("🎯 Meeting Analysis API is ready to process files!")
-    if settings.DEBUG:
-        logger.info(f"📚 API documentation available at: /docs")
-        logger.info(f"🔍 Debug endpoints available at: /debug/*")
-
+# ✅ Added safe environment debug endpoint
 router = APIRouter()
 
 @router.get("/debug/env")
@@ -306,8 +202,15 @@ async def check_env():
     return {
         "api_key_exists": bool(api_key),
         "api_key_length": len(api_key) if api_key else 0,
-        "api_key_preview": api_key[:10] + "..." if api_key else "NONE",
-        "all_env_vars": list(os.environ.keys())  # See all available env vars
+        "api_key_preview": api_key[:8] + "..." if api_key else "NONE"
     }
 
 app.include_router(router)
+
+# Startup log
+@app.on_event("startup")
+async def startup_event():
+    logger.info("🎯 Meeting Analysis API is ready to process files!")
+    if settings.DEBUG:
+        logger.info(f"📚 API docs at /docs")
+        logger.info(f"🔍 Debug endpoints available at /debug/*")
