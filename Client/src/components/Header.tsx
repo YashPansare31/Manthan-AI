@@ -18,21 +18,6 @@ export const Header = ({ processingTime, isProcessing }: HeaderProps) => {
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkApiHealth = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/health');
-        setApiStatus(response.ok ? 'online' : 'offline');
-      } catch {
-        setApiStatus('offline');
-      }
-    };
-
-    checkApiHealth();
-    const interval = setInterval(checkApiHealth, 30000); // Check every 30s
-    return () => clearInterval(interval);
-  }, []);
-
   const getStatusColor = () => {
     switch (apiStatus) {
       case 'online': return 'bg-green-500';
