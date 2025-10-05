@@ -27,29 +27,35 @@ class ProductionNLPAnalyzer:
     
     def __init__(self):
         """Initialize production analyzer."""
-        self.openai_api_key = settings.OPENAI_API_KEY
-        #self.assemblyai_api_key = self.assemblyai_api_key = getattr(settings, 'ASSEMBLYAI_API_KEY', None)  # Alternative transcription
+        # CRITICAL: Strip whitespace from API key
+        self.openai_api_key = settings.OPENAI_API_KEY.strip() if settings.OPENAI_API_KEY else None
         self.http_client = httpx.AsyncClient(timeout=60.0)
         
         # Validate API keys
         if not self.openai_api_key:
-            logger.error("OpenAI API key not found!")
-        
-        logger.info(f"🔑 API Key loaded: {bool(self.openai_api_key)} - Length: {len(self.openai_api_key) if self.openai_api_key else 0}")
-
+            logger.error("❌ OpenAI API key not found!")
+        elif not self.openai_api_key.startswith("sk-"):
+            logger.error(f"❌ OpenAI API key format invalid! Starts with: {self.openai_api_key[:10]}")
+        else:
+            logger.info(f"✅ API Key loaded: True - Length: {len(self.openai_api_key)}")
+            logger.info(f"🔑 API Key prefix: {self.openai_api_key[:15]}...")
         
         logger.info("Production NLP Analyzer initialized")
 
     async def _call_openai_transcription(self, audio_file) -> dict:
-        """Call OpenAI Whisper API."""
+        """Call OpenAI Whisper API with proper error handling."""
+        
+        # CRITICAL: Strip any whitespace from API key
+        api_key = self.openai_api_key.strip()
         
         headers = {
-            "Authorization": f"Bearer {self.openai_api_key}"
+            "Authorization": f"Bearer {api_key}"
         }
         
-        # ADD DEBUG LOGGING
-        logger.info(f"🔍 Sending request with headers: {list(headers.keys())}")
-        logger.info(f"🔍 Auth header starts with: {headers['Authorization'][:20]}...")
+        # Debug logging
+        logger.info(f"🔍 Making transcription request to OpenAI")
+        logger.info(f"🔍 API Key prefix: {api_key[:20]}...")
+        logger.info(f"🔍 API Key length: {len(api_key)}")
         
         files = {
             "file": audio_file,
@@ -58,20 +64,30 @@ class ProductionNLPAnalyzer:
             "timestamp_granularities[]": (None, "segment")
         }
         
-        response = await self.http_client.post(
-            "https://api.openai.com/v1/audio/transcriptions",
-            headers=headers,
-            files=files
-        )
-        
-        # ADD RESPONSE DEBUG
-        logger.info(f"🔍 Response status: {response.status_code}")
-        if response.status_code != 200:
-            logger.error(f"🔍 Response body: {response.text}")
-        
-        response.raise_for_status()
-        return response.json()
-    
+        try:
+            response = await self.http_client.post(
+                "https://api.openai.com/v1/audio/transcriptions",
+                headers=headers,
+                files=files
+            )
+            
+            logger.info(f"🔍 Response status: {response.status_code}")
+            
+            if response.status_code != 200:
+                logger.error(f"❌ OpenAI API Error: {response.status_code}")
+                logger.error(f"❌ Response body: {response.text}")
+                response.raise_for_status()
+            
+            return response.json()
+            
+        except httpx.HTTPStatusError as e:
+            logger.error(f"❌ HTTP Error from OpenAI: {e.response.status_code}")
+            logger.error(f"❌ Error details: {e.response.text}")
+            raise
+        except Exception as e:
+            logger.error(f"❌ Unexpected error calling OpenAI: {str(e)}")
+            raise
+
     async def analyze_meeting(self, audio_path: str) -> Dict[str, Any]:
         """
         Perform complete meeting analysis using API services.
@@ -181,40 +197,21 @@ class ProductionNLPAnalyzer:
             
         except Exception as e:
             logger.error(f"OpenAI transcription failed: {e}")
-            return self._get_demo_transcript()
-    
-    async def _call_openai_transcription(self, audio_file) -> dict:
-        """Call OpenAI Whisper API."""
-        headers = {
-            "Authorization": f"Bearer {self.openai_api_key}"
-        }
-        
-        files = {
-            "file": audio_file,
-            "model": (None, "whisper-1"),
-            "response_format": (None, "verbose_json"),
-            "timestamp_granularities[]": (None, "segment")
-        }
-        
-        response = await self.http_client.post(
-            "https://api.openai.com/v1/audio/transcriptions",
-            headers=headers,
-            files=files
-        )
-        
-        response.raise_for_status()
-        return response.json()
+            raise  # Re-raise to see the actual error
     
     async def _generate_summary_api(self, text: str) -> str:
         """Generate meeting summary using OpenAI GPT."""
         try:
+            # CRITICAL: Strip whitespace from API key
+            api_key = self.openai_api_key.strip()
+            
             headers = {
-                "Authorization": f"Bearer {self.openai_api_key}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json"
             }
             
             data = {
-                "model": "gpt-4o-mini",  # Cost-effective model
+                "model": "gpt-4o-mini",
                 "messages": [
                     {
                         "role": "system",
@@ -226,7 +223,7 @@ class ProductionNLPAnalyzer:
                     },
                     {
                         "role": "user",
-                        "content": f"Meeting transcript:\n\n{text[:4000]}"  # Limit for cost control
+                        "content": f"Meeting transcript:\n\n{text[:4000]}"
                     }
                 ],
                 "max_tokens": 200,
@@ -251,8 +248,11 @@ class ProductionNLPAnalyzer:
     async def _extract_action_items_api(self, text: str) -> List[ActionItem]:
         """Extract action items using OpenAI GPT."""
         try:
+            # CRITICAL: Strip whitespace from API key
+            api_key = self.openai_api_key.strip()
+            
             headers = {
-                "Authorization": f"Bearer {self.openai_api_key}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json"
             }
             
@@ -284,10 +284,8 @@ class ProductionNLPAnalyzer:
             response.raise_for_status()
             result = response.json()
             
-            # Parse JSON response
             content = result["choices"][0]["message"]["content"].strip()
             
-            # Clean up response (remove markdown formatting if present)
             if content.startswith("```"):
                 content = content.split("```")[1]
                 if content.startswith("json"):
@@ -295,9 +293,8 @@ class ProductionNLPAnalyzer:
             
             action_data = json.loads(content)
             
-            # Convert to ActionItem objects
             action_items = []
-            for item in action_data[:10]:  # Limit to 10 items
+            for item in action_data[:10]:
                 try:
                     action_items.append(ActionItem(
                         id=str(uuid.uuid4()),
@@ -320,8 +317,11 @@ class ProductionNLPAnalyzer:
     async def _extract_key_decisions_api(self, text: str) -> List[KeyDecision]:
         """Extract key decisions using OpenAI GPT."""
         try:
+            # CRITICAL: Strip whitespace from API key
+            api_key = self.openai_api_key.strip()
+            
             headers = {
-                "Authorization": f"Bearer {self.openai_api_key}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json"
             }
             
@@ -353,10 +353,8 @@ class ProductionNLPAnalyzer:
             response.raise_for_status()
             result = response.json()
             
-            # Parse JSON response
             content = result["choices"][0]["message"]["content"].strip()
             
-            # Clean up response
             if content.startswith("```"):
                 content = content.split("```")[1]
                 if content.startswith("json"):
@@ -364,9 +362,8 @@ class ProductionNLPAnalyzer:
             
             decision_data = json.loads(content)
             
-            # Convert to KeyDecision objects
             decisions = []
-            for item in decision_data[:5]:  # Limit to 5 decisions
+            for item in decision_data[:5]:
                 try:
                     decisions.append(KeyDecision(
                         id=str(uuid.uuid4()),
@@ -388,8 +385,11 @@ class ProductionNLPAnalyzer:
     async def _analyze_sentiment_api(self, text: str) -> Dict[str, Any]:
         """Analyze sentiment using OpenAI GPT."""
         try:
+            # CRITICAL: Strip whitespace from API key
+            api_key = self.openai_api_key.strip()
+            
             headers = {
-                "Authorization": f"Bearer {self.openai_api_key}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json"
             }
             
@@ -419,10 +419,8 @@ class ProductionNLPAnalyzer:
             response.raise_for_status()
             result = response.json()
             
-            # Parse JSON response
             content = result["choices"][0]["message"]["content"].strip()
             
-            # Clean up response
             if content.startswith("```"):
                 content = content.split("```")[1]
                 if content.startswith("json"):
@@ -437,8 +435,11 @@ class ProductionNLPAnalyzer:
     async def _extract_topics_api(self, text: str) -> List[str]:
         """Extract key topics using OpenAI GPT."""
         try:
+            # CRITICAL: Strip whitespace from API key
+            api_key = self.openai_api_key.strip()
+            
             headers = {
-                "Authorization": f"Bearer {self.openai_api_key}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json"
             }
             
@@ -470,10 +471,8 @@ class ProductionNLPAnalyzer:
             response.raise_for_status()
             result = response.json()
             
-            # Parse JSON response
             content = result["choices"][0]["message"]["content"].strip()
             
-            # Clean up response
             if content.startswith("```"):
                 content = content.split("```")[1]
                 if content.startswith("json"):
@@ -509,14 +508,13 @@ class ProductionNLPAnalyzer:
                 name=speaker_name,
                 speaking_time=data["speaking_time"],
                 word_count=data["word_count"],
-                sentiment=SentimentLabel.NEUTRAL  # Could enhance with per-speaker sentiment
+                sentiment=SentimentLabel.NEUTRAL
             ))
         
         return speakers
     
     def _generate_insights(self, segments: List[TranscriptSegment], sentiment_data: Dict, topics: List[str]) -> MeetingInsights:
         """Generate meeting insights (local processing)."""
-        # Calculate participation balance
         speaker_times = {}
         total_time = 0
         
@@ -534,7 +532,7 @@ class ProductionNLPAnalyzer:
             sentiment_analysis={
                 "overall": sentiment_data.get("overall", "neutral"),
                 "score": sentiment_data.get("score", 0.0),
-                "distribution": {"positive": 40, "neutral": 45, "negative": 15}  # Mock distribution
+                "distribution": {"positive": 40, "neutral": 45, "negative": 15}
             },
             meeting_tone=sentiment_data.get("tone", "Professional discussion"),
             participation_balance=participation_balance
@@ -548,7 +546,6 @@ class ProductionNLPAnalyzer:
         
         for i, sentence in enumerate(sentences):
             if sentence.strip():
-                # Estimate duration based on word count (assuming ~2 words per second)
                 word_count = len(sentence.split())
                 duration = max(2.0, word_count / 2.0)
                 

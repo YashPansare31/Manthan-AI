@@ -91,7 +91,7 @@ app = FastAPI(
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
     lifespan=lifespan,
-    contact={"name": "Meeting Analysis API", "url": "https://github.com/yourusername/meeting-analysis"},
+    contact={"name": "Meeting Analysis API", "url": "https://github.com/YashPansare31/Manthan-AI"},
     license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
 )
 
@@ -104,9 +104,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins_list,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE"],
+    allow_methods=["GET", "POST", "DELETE",'OPTIONS'],
     allow_headers=["*"],
-    expose_headers=["*"]
+    expose_headers=["*"],
+    max_age=3600
 )
 
 # Custom exception handlers
