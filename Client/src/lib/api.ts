@@ -14,7 +14,10 @@ interface ImportMeta {
 // Add Auth0 import for the hook
 import { useAuth0 } from '@auth0/auth0-react'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.MODE === 'production' 
+    ? 'https://manthan-ai-69lq.onrender.com/api'  // Production URL
+    : 'http://localhost:8000/api');               // Development URL
 
 // Frontend interface (what components expect)
 export interface AnalysisResults {
